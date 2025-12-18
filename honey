@@ -1,0 +1,159 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local pgui = player:WaitForChild("PlayerGui")
+
+
+local CoreStats = player:WaitForChild("CoreStats")
+local HoneyStat = CoreStats:WaitForChild("Honey")
+
+
+if pgui:FindFirstChild("BSS_Plus") then pgui.BSS_Plus:Destroy() end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BSS_Plus"
+screenGui.Parent = pgui
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 230, 0, 120)
+mainFrame.Position = UDim2.new(0.5, -115, 0.1, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true 
+mainFrame.Parent = screenGui
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -30, 0, 25)
+titleLabel.Position = UDim2.new(0, 12, 0, 6)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 17
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Text = "Bee Swarm +"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Parent = mainFrame
+
+local authorLabel = Instance.new("TextLabel")
+authorLabel.Size = UDim2.new(1, -30, 0, 15)
+authorLabel.Position = UDim2.new(0, 12, 0, 26)
+authorLabel.BackgroundTransparency = 1
+authorLabel.Font = Enum.Font.GothamMedium
+authorLabel.TextSize = 12
+authorLabel.TextXAlignment = Enum.TextXAlignment.Left
+authorLabel.Text = "by: ghostalwill"
+authorLabel.Parent = mainFrame
+
+-- Кнопка Х
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 24, 0, 24)
+closeBtn.Position = UDim2.new(1, -32, 0, 8)
+closeBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = mainFrame
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+
+local function CreateLabel(pos, color, text)
+    local l = Instance.new("TextLabel")
+    l.Size = UDim2.new(1, -20, 0, 25)
+    l.Position = pos
+    l.BackgroundTransparency = 1
+    l.TextColor3 = color
+    l.Font = Enum.Font.GothamMedium
+    l.TextSize = 15
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Position = UDim2.new(0, 15, 0, pos.Y.Offset)
+    l.Text = text
+    l.Parent = mainFrame
+    return l
+end
+
+local sessionLabel = CreateLabel(UDim2.new(0,0,0,50), Color3.new(1,1,1), "🍯 Session: 0")
+local hourlyLabel = CreateLabel(UDim2.new(0,0,0,72), Color3.fromRGB(255, 255, 100), "📈 Per Hour: 0")
+local timerLabel = CreateLabel(UDim2.new(0,0,0,94), Color3.fromRGB(200, 200, 200), "🕒 Runtime: 00:00:00")
+
+task.spawn(function()
+    while true do
+        local hue = tick() % 5 / 5
+        authorLabel.TextColor3 = Color3.fromHSV(hue, 0.8, 1)
+        stroke.Color = Color3.fromHSV(hue, 0.7, 1)
+        task.wait()
+    end
+end)
+
+local startHoney = HoneyStat.Value
+local startTime = tick()
+
+local function formatValue(v)
+    if v >= 1e12 then return string.format("%.2fT", v/1e12)
+    elseif v >= 1e9 then return string.format("%.2fB", v/1e9)
+    elseif v >= 1e6 then return string.format("%.2fM", v/1e6)
+    elseif v >= 1e3 then return string.format("%.1fK", v/1000)
+    else return tostring(math.floor(v)) end
+end
+
+local function formatTime(s)
+    local h = math.floor(s / 3600)
+    local m = math.floor((s % 3600) / 60)
+    local sec = math.floor(s % 60)
+    return string.format("%02d:%02d:%02d", h, m, sec)
+end
+
+task.spawn(function()
+    while task.wait(1) do
+        local currentHoney = HoneyStat.Value
+        local sessionHoney = currentHoney - startHoney
+        local timeElapsed = tick() - startTime
+        
+        -- Honey Per Hour
+        local hph = timeElapsed > 0 and (sessionHoney / timeElapsed) * 3600 or 0
+        
+        -- Обновление интерфейса
+        sessionLabel.Text = "🍯 Session: " .. formatValue(sessionHoney)
+        hourlyLabel.Text = "📈 Per Hour: " .. formatValue(hph)
+        timerLabel.Text = "🕒 Runtime: " .. formatTime(timeElapsed)
+    end
+end)
+
+local isVisible = true
+local function toggleUI(state)
+    isVisible = state
+    local hintLabel = pgui.BSS_Plus:FindFirstChild("Hint")
+    if isVisible then
+        mainFrame:TweenPosition(UDim2.new(0.5, -115, 0.1, 0), "Out", "Back", 0.5, true)
+        if hintLabel then hintLabel:TweenPosition(UDim2.new(1, 220, 0.5, -20), "In", "Linear", 0.3, true) end
+    else
+        mainFrame:TweenPosition(UDim2.new(0.5, -115, -0.4, 0), "In", "Quad", 0.5, true)
+        if hintLabel then hintLabel:TweenPosition(UDim2.new(1, -210, 0.5, -20), "Out", "Quad", 0.5, true) end
+    end
+end
+
+-- Подсказка при закрытии
+local hint = Instance.new("TextLabel")
+hint.Name = "Hint"
+hint.Size = UDim2.new(0, 200, 0, 45)
+hint.Position = UDim2.new(1, 220, 0.5, -20)
+hint.BackgroundColor3 = Color3.new(0, 0, 0)
+hint.BackgroundTransparency = 0.4
+hint.TextColor3 = Color3.new(1, 1, 1)
+hint.Font = Enum.Font.GothamMedium
+hint.TextSize = 10
+hint.Text = "To return to the script, press B."
+hint.Parent = screenGui
+Instance.new("UICorner", hint)
+
+closeBtn.MouseButton1Click:Connect(function() toggleUI(false) end)
+UserInputService.InputBegan:Connect(function(i, g)
+    if not g and i.KeyCode == Enum.KeyCode.B then toggleUI(not isVisible) end
+end)
+
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+toggleUI(true)
