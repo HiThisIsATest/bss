@@ -47,7 +47,7 @@ authorLabel.BackgroundTransparency = 1
 authorLabel.Font = Enum.Font.GothamMedium
 authorLabel.TextSize = 12
 authorLabel.TextXAlignment = Enum.TextXAlignment.Left
-authorLabel.Text = "by: ghostalwill"
+authorLabel.Text = "by: latemorningz on dc"
 authorLabel.Parent = mainFrame
 
 -- Кнопка Х
